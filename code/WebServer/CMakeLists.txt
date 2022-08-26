@@ -19,7 +19,9 @@ target_sources( WebServer PRIVATE
                 ./http/http_conn.cpp
                 ./pool/locker.h
                 ./pool/locker.cpp
-                ./pool/threadpool.h)
+                ./pool/threadpool.h
+                ./timer/srp_timer.h
+                ./timer/srp_timer.cpp)
                 
 target_compile_features( WebServer PRIVATE cxx_std_20 )
 
