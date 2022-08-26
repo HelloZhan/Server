@@ -6,6 +6,9 @@
 
 2.利用状态机解析HTTP请求报文，实现处理静态资源的请求
 
+3.基于双链表实现的定时器，关闭超时的非活动连接；（TODO：小根堆）
+
+
 ## 压力测试
 
 ![Screenshot_20220825_213132](https://user-images.githubusercontent.com/82313079/186679723-070edc6a-6190-4037-b477-ae0577ea14ff.png)
