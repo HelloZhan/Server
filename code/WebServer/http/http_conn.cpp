@@ -32,12 +32,14 @@ void addfd( int epollfd, int fd, bool one_shot ) {
         event.events |= EPOLLONESHOT;
     }
     epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
+    printf("向epoll添加fd = %d\n",fd);
     // 设置文件描述符非阻塞
     setnonblocking(fd);
 }
 
 // 从epoll中移除监听的文件描述符
 void removefd( int epollfd, int fd ) {
+    printf("向epoll中删除fd = %d\n",fd);
     epoll_ctl( epollfd, EPOLL_CTL_DEL, fd, 0 );
     close(fd);
 }
@@ -287,7 +289,7 @@ http_conn::HTTP_CODE http_conn::process_read() {
 // 映射到内存地址m_file_address处，并告诉调用者获取文件成功
 http_conn::HTTP_CODE http_conn::do_request()
 {
-    // "/home/nowcoder/webserver/resources"
+    // "/root/A_Project/WebServer/resources"
     strcpy( m_real_file, doc_root );
     int len = strlen( doc_root );
     strncpy( m_real_file + len, m_url, FILENAME_LEN - len - 1 );
