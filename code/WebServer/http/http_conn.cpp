@@ -153,76 +153,36 @@ http_conn::LINE_STATUS http_conn::parse_line() {
 }
 
 // 解析HTTP请求行，获得请求方法，目标URL,以及HTTP版本号
-http_conn::HTTP_CODE http_conn::parse_request_line(char* text) {
-    // GET /index.html HTTP/1.1
-    m_url = strpbrk(text, " \t"); // 判断第二个参数中的字符哪个在text中最先出现
-    if (! m_url) {
-        return BAD_REQUEST;
+http_conn::HTTP_CODE http_conn::parse_request_line(const std::string &line) {
+    std::regex pattern("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
+    std::smatch subMatch;
+    if(regex_match(line, subMatch, pattern)){
+        method_ = subMatch[1];
+        path_ = subMatch[2];
+        version_ = subMatch[3];
+        m_check_state = CHECK_STATE_HEADER; // 检查状态变成检查头
+
+        if(method_ == "GET")m_method = GET;
+
+        // 待处理
+        m_url = path_.data();
+        printf("read path_ = %s\n", path_.c_str());
+
+        return NO_REQUEST;
     }
-    // GET\0/index.html HTTP/1.1
-    *m_url++ = '\0';    // 置位空字符，字符串结束符
-    char* method = text;
-    if ( strcasecmp(method, "GET") == 0 ) { // 忽略大小写比较
-        m_method = GET;
-    } else {
-        return BAD_REQUEST;
-    }
-    // /index.html HTTP/1.1
-    // 检索字符串 str1 中第一个不在字符串 str2 中出现的字符下标。
-    m_version = strpbrk( m_url, " \t" );
-    if (!m_version) {
-        return BAD_REQUEST;
-    }
-    *m_version++ = '\0';
-    if (strcasecmp( m_version, "HTTP/1.1") != 0 ) {
-        return BAD_REQUEST;
-    }
-    /**
-     * http://192.168.110.129:10000/index.html
-    */
-    if (strncasecmp(m_url, "http://", 7) == 0 ) {
-        m_url += 7;
-        // 在参数 str 所指向的字符串中搜索第一次出现字符 c（一个无符号字符）的位置。
-        m_url = strchr( m_url, '/' );
-    }
-    if ( !m_url || m_url[0] != '/' ) {
-        return BAD_REQUEST;
-    }
-    m_check_state = CHECK_STATE_HEADER; // 检查状态变成检查头
-    return NO_REQUEST;
+
+    return BAD_REQUEST;
 }
 
 // 解析HTTP请求的一个头部信息
-http_conn::HTTP_CODE http_conn::parse_headers(char* text) {
-    // 遇到空行，表示头部字段解析完毕
-    if( text[0] == '\0' ) {
-        // 如果HTTP请求有消息体，则还需要读取m_content_length字节的消息体，
-        // 状态机转移到CHECK_STATE_CONTENT状态
-        if ( m_content_length != 0 ) {
-            m_check_state = CHECK_STATE_CONTENT;
-            return NO_REQUEST;
-        }
-        // 否则说明我们已经得到了一个完整的HTTP请求
-        return GET_REQUEST;
-    } else if ( strncasecmp( text, "Connection:", 11 ) == 0 ) {
-        // 处理Connection 头部字段  Connection: keep-alive
-        text += 11;
-        text += strspn( text, " \t" );
-        if ( strcasecmp( text, "keep-alive" ) == 0 ) {
-            m_linger = true;
-        }
-    } else if ( strncasecmp( text, "Content-Length:", 15 ) == 0 ) {
-        // 处理Content-Length头部字段
-        text += 15;
-        text += strspn( text, " \t" );
-        m_content_length = atol(text);
-    } else if ( strncasecmp( text, "Host:", 5 ) == 0 ) {
-        // 处理Host头部字段
-        text += 5;
-        text += strspn( text, " \t" );
-        m_host = text;
-    } else {
-        printf( "oop! unknow header %s\n", text );
+http_conn::HTTP_CODE http_conn::parse_headers(const std::string& line) {
+    std::regex patten("^([^:]*): ?(.*)$");
+    std::smatch subMatch;
+    if(regex_match(line, subMatch, patten)) {
+        header_[subMatch[1]] = subMatch[2];
+    }
+    else {
+        m_check_state = CHECK_STATE_CONTENT;
     }
     return NO_REQUEST;
 }
@@ -245,20 +205,21 @@ http_conn::HTTP_CODE http_conn::process_read() {
     while (((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK))
                 || ((line_status = parse_line()) == LINE_OK)) {
         // 获取一行数据
-        text = get_line();
+        char * text = get_line();
+
         m_start_line = m_checked_idx;
-        printf( "got 1 http line: %s\n", text );
+        printf( "got 1 http line: %s\n", text);
 
         switch ( m_check_state ) {
             case CHECK_STATE_REQUESTLINE: {
-                ret = parse_request_line( text );
+                ret = parse_request_line( std::string(text) );
                 if ( ret == BAD_REQUEST ) {
                     return BAD_REQUEST;
                 }
                 break;
             }
             case CHECK_STATE_HEADER: {
-                ret = parse_headers( text );
+                ret = parse_headers( std::string(text) );
                 if ( ret == BAD_REQUEST ) {
                     return BAD_REQUEST;
                 } else if ( ret == GET_REQUEST ) {

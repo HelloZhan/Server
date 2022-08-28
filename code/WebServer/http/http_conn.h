@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <string>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +21,8 @@
 #include <errno.h>
 #include "../pool/locker.h"
 #include <sys/uio.h>
+#include <unordered_map>
+#include <regex>
 
 class http_conn
 {
@@ -70,8 +73,8 @@ private:
     bool process_write( HTTP_CODE ret );    // 填充HTTP应答
 
     // 下面这一组函数被process_read调用以分析HTTP请求
-    HTTP_CODE parse_request_line( char* text );
-    HTTP_CODE parse_headers( char* text );
+    HTTP_CODE parse_request_line( const std::string &line );
+    HTTP_CODE parse_headers( const std::string& line );
     HTTP_CODE parse_content( char* text );
     HTTP_CODE do_request();
     char* get_line() { return m_read_buf + m_start_line; }
@@ -105,6 +108,12 @@ private:
     METHOD m_method;                        // 请求方法
 
     char m_real_file[ FILENAME_LEN ];       // 客户请求的目标文件的完整路径，其内容等于 doc_root + m_url, doc_root是网站根目录
+
+    std::string method_, path_, version_, body_;
+    std::unordered_map<std::string, std::string> header_;
+    std::unordered_map<std::string, std::string> post_;
+
+
     char* m_url;                            // 客户请求的目标文件的文件名
     char* m_version;                        // HTTP协议版本号，我们仅支持HTTP1.1
     char* m_host;                           // 主机名
