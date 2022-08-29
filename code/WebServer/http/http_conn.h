@@ -23,6 +23,7 @@
 #include <sys/uio.h>
 #include <unordered_map>
 #include <regex>
+#include "../log/log.h"
 
 class http_conn
 {

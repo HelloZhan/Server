@@ -21,7 +21,10 @@ target_sources( WebServer PRIVATE
                 ./pool/locker.cpp
                 ./pool/threadpool.h
                 ./buffer/buffer.h
-                ./buffer/buffer.cpp)
+                ./buffer/buffer.cpp
+                ./log/log.h
+                ./log/log.cpp
+                ./log/blockqueue.h)
                 
 target_compile_features( WebServer PRIVATE cxx_std_20 )
 

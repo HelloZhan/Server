@@ -11,6 +11,7 @@
 #include "./pool/locker.h"
 #include "./pool/threadpool.h"
 #include "./http/http_conn.h"
+#include "./log/log.h"
 
 #define MAX_FD 65536   // 最大的文件描述符个数
 #define MAX_EVENT_NUMBER 10000  // 监听的最大的事件数量
@@ -57,6 +58,10 @@ int main( int argc, char* argv[] ) {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_family = AF_INET;
     address.sin_port = htons( port );
+
+    // 创建日志文件系统
+    Log::Instance()->init(1, "./log", ".log", 1024);
+    LOG_INFO("========== Server init ==========");
 
     // 端口复用
     int reuse = 1;

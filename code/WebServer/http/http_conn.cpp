@@ -170,7 +170,7 @@ http_conn::HTTP_CODE http_conn::parse_request_line(const std::string &line) {
 
         return NO_REQUEST;
     }
-
+    LOG_ERROR("RequestLine Error");
     return BAD_REQUEST;
 }
 
@@ -460,7 +460,7 @@ void http_conn::process() {
         modfd( m_epollfd, m_sockfd, EPOLLIN );
         return;
     }
-
+    LOG_INFO("========== process ==========");
     // 生成响应
     bool write_ret = process_write( read_ret );
     if ( !write_ret ) {
